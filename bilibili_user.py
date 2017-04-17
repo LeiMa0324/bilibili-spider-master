@@ -11,6 +11,7 @@ import time
 from imp import reload
 import traceback,sys
 from requests.exceptions import ProxyError
+import VideoTest
 
 #初始化计数器
 count=[0]
@@ -26,10 +27,7 @@ reload(sys)
 
 #载入userAgent
 def LoadUserAgents(uafile):
-    """
-    uafile : string
-        path to text file of user agents, one per line
-    """
+
     uas = []
     with open(uafile, 'rb') as uaf:
         for ua in uaf.readlines():
@@ -89,12 +87,14 @@ def getsource(url):
             # print ("request success,getting user mid:"+payload["mid"]+"\n"+ jscontent)
             #处理json数据
             processjson(jscontent)
+            #获取视频与tag列表
+            VideoTest.GetVideoSource(payload["mid"])
 
         else:
             print "请求失败，用户mid %s 错误码：%s "% (payload["mid"],response.status_code,
                                                    # tempproxy
                                                    )
-            #将错误id存入文件
+            #将错误id存入数据库
             user2file(payload["mid"])
             #如果被403则线程阻塞，随机睡眠（60-120s）
 
@@ -112,10 +112,8 @@ def getsource(url):
 #处理json数据
 def processjson(jscontent):
     time2 = time.time()
-    print(jscontent)
     try:
         jsDict = json.loads(jscontent)
-
         statusJson = jsDict['status'] if 'status' in jsDict.keys() else False
         if statusJson == True:
             if 'data' in jsDict.keys():
@@ -146,9 +144,6 @@ def processjson(jscontent):
                 #将要存入的数据设置为列表
                 userlist=[mid, mid, name, sex, face, coins, regtime_format, spacesta, birthday, place, description,
                 article, fans, friend, attention, sign, str(attentions), level, exp,playnum]
-
-                print(regtime_format)
-                # print("Succeed: " + mid + "\t" + str(time2 - time1))
                 #插入用户数据
                 insertuser(userlist)
             else:
@@ -162,19 +157,16 @@ def processjson(jscontent):
 
 #插入用户数据到mysql数据库
 def insertuser(userlist):
-    conn = pymysql.connect(host='127.0.0.1', user='root', passwd='root', charset='utf8')
-    print userlist
+    conn = pymysql.connect(host=dbconfig["ip"], user=dbconfig["user"], passwd=dbconfig["passwd"], charset='utf8')
     try:
         cur = conn.cursor()
-        # cur.execute('create database if not exists python')
-        conn.select_db('bilibili')
+        conn.select_db(dbconfig["db"])
         #检查是否该用户已存在
         cur.execute("select count(*) from bilibili_user_info where id=%s",userlist[0])
         record=cur.fetchone()[0]
         if record==1:
             print "用户在数据库中已存在！mid:%s" % userlist[0]
         else:
-            print len(userlist)
             cur.execute('INSERT INTO bilibili_user_info VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
             userlist)
             print "用户成功存入数据库，mid：", userlist[0]
@@ -189,13 +181,13 @@ def insertuser(userlist):
 
 #检查数据库中最后一条记录
 def lastuserindb():
-      conn = pymysql.connect(host='127.0.0.1', user='root', passwd='root', charset='utf8')
+      conn = pymysql.connect(host=dbconfig["ip"], user=dbconfig["user"], passwd=dbconfig["passwd"], charset='utf8')
       lastuser=[0]
       try:
 
           cur = conn.cursor()
           # cur.execute('create database if not exists python')
-          conn.select_db('bilibili')
+          conn.select_db(dbconfig["db"])
           #检查是否该用户已存在
           cur.execute("select max(id) from bilibili_user_info;")
           lastuser[0] = cur.fetchone()[0]
@@ -207,11 +199,18 @@ def lastuserindb():
         conn.close()
         return  lastuser[0]
 
-#存入错误用户id到文件
+#存入错误用户id到数据库
 def user2file(userid):
-    with open('403Users.txt', 'a') as f:
-        f.write(userid+'\n')
-    print "用户%s已存入403forbidden.txt" % userid
+      conn = pymysql.connect(host=dbconfig["ip"], user=dbconfig["user"], passwd=dbconfig["passwd"], charset='utf8')
+      try:
+          cur = conn.cursor()
+          conn.select_db(dbconfig["db"])
+          cur.execute("insert into fail_users(mid) values (%s);",userid)
+      except Exception:
+        print "插入403用户失败"
+      finally:
+        conn.close()
+
 
 time1 = time.time()
 
@@ -222,11 +221,26 @@ time1 = time.time()
 #         url = 'http://space.bilibili.com/ajax/member/GetInfo?mid=' + str(i)
 #         urls.append(url)
 
-#程序开始，检查数据库中最大值
+#程序开始，输入ip最后一位，链接数据库
+
+dbconfig={}
+
+with open("dbconfig.txt","rb") as config:
+
+    con=config.readlines()
+    dbconfig["ip"]=con[0].replace("ip=","").replace("\r\n","")
+    dbconfig["user"]=con[1].replace("user=","").replace("\r\n","")
+    dbconfig["passwd"]=con[2].replace("passwd=","").replace("\r\n","")
+    dbconfig["db"]=con[3].replace("db=","").replace("\r\n","")
+    dbconfig["maxid"]=con[4].replace("maxid=","").replace("\r\n","")
+
+print(dbconfig)
+
+
 lastuser =lastuserindb()
 #数据库中为空
 if  lastuser==0:
-    maxid=186646
+    maxid=int(dbconfig["maxid"])
 else:
     maxid=int(lastuserindb())
 
