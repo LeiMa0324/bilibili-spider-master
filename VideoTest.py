@@ -121,22 +121,26 @@ def getTags(VideoList):
         if 'data' in tgDict.keys():
             #对于每一个tag
             tagDictList=tgDict['data']
-            for k in range(0,len(tagDictList)):
-                tag_id = tagDictList[k]['tag_id']
-                tag_name = tagDictList[k]['tag_name']
-                tag_type = tagDictList[k]['type']
-                tag_content = tagDictList[k]['content']
-                tag_ctime = tagDictList[k]['ctime']
-                tag_use = tagDictList[k]['count']['use']
-                tag_atten = tagDictList[k]['count']['atten']
+            #某个视频的tag列表可能为空
+            if tagDictList:
+                for k in range(0,len(tagDictList)):
+                    tag_id = tagDictList[k]['tag_id']
+                    tag_name = tagDictList[k]['tag_name']
+                    tag_type = tagDictList[k]['type']
+                    tag_content = tagDictList[k]['content']
+                    tag_ctime = tagDictList[k]['ctime']
+                    tag_use = tagDictList[k]['count']['use']
+                    tag_atten = tagDictList[k]['count']['atten']
 
-                tag_ctime_format = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(tag_ctime))
-                tag=[tag_id,tag_name,tag_type,tag_content,tag_ctime_format,tag_use,tag_atten]
-                tagList4Page.append(tag)
-                tagList.append(str(tag_id))
-            string =','.join(tagList)
-            VideoListlocal[i]['tags'] =string
-            # print "第%d条视频%d的tag列表为：%r" % (i,VideoListlocal[i]['aid'],tagList)
+                    tag_ctime_format = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(tag_ctime))
+                    tag=[tag_id,tag_name,tag_type,tag_content,tag_ctime_format,tag_use,tag_atten]
+                    tagList4Page.append(tag)
+                    tagList.append(str(tag_id))
+                string =','.join(tagList)
+                VideoListlocal[i]['tags'] =string
+                # print "第%d条视频%d的tag列表为：%r" % (i,VideoListlocal[i]['aid'],tagList)
+            else:
+                VideoListlocal[i]['tags']=''
         else:
             VideoListlocal[i]['tags']=''
     '''删除tag列表中的重复项
@@ -199,4 +203,4 @@ with open("dbconfig.txt","rb") as config:
     dbconfig["db"]=con[3].replace("db=","").replace("\r\n","")
     dbconfig["maxid"]=con[4].replace("maxid=","").replace("\r\n","")
 
-GetVideoSource('509857')
+

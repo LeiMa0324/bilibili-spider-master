@@ -35,6 +35,7 @@ def LoadUserAgents(uafile):
                 uas.append(ua.strip()[1:-1-1])
     random.shuffle(uas)
     return uas
+
 uas = LoadUserAgents("user_agents.txt")
 head = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36',
@@ -85,6 +86,9 @@ def getsource(url):
         if response.status_code ==200:
             print "请求成功，获取用户信息...mid:%s "%(payload["mid"])
             # print ("request success,getting user mid:"+payload["mid"]+"\n"+ jscontent)
+            '''
+            检查403表中是否已有该数据，如果有，则删除
+            '''
             #处理json数据
             processjson(jscontent)
             #获取视频与tag列表
@@ -94,6 +98,9 @@ def getsource(url):
             print "请求失败，用户mid %s 错误码：%s "% (payload["mid"],response.status_code,
                                                    # tempproxy
                                                    )
+            '''
+            检查403表中是否有该数据，如果没有，则插入
+            '''
             #将错误id存入数据库
             user2file(payload["mid"])
             #如果被403则线程阻塞，随机睡眠（60-120s）
@@ -197,6 +204,10 @@ def lastuserindb():
       finally:
           #关闭数据库
         conn.close()
+        if lastuser[0] :
+            lastuser[0]=lastuser[0]
+        else:
+            lastuser[0]=0
         return  lastuser[0]
 
 #存入错误用户id到数据库
@@ -238,11 +249,10 @@ print(dbconfig)
 
 
 lastuser =lastuserindb()
-#数据库中为空
-if  lastuser==0:
-    maxid=int(dbconfig["maxid"])
-else:
-    maxid=int(lastuserindb())
+
+#选择数据库和文件中最大值
+maxid=int(dbconfig["maxid"]) if int(dbconfig["maxid"])>int(lastuserindb()) else int(lastuserindb())
+
 
 print"当前数据库中最大用户为：", maxid
 
@@ -252,8 +262,8 @@ print"当前数据库中最大用户为：", maxid
 优化方案
 '''
 
-#一次获取10w个用户
-for m in range(0,999):
+#一次获取100w个用户
+for m in range(0,9999):
     urls = []
     for i in range(maxid+m*100,maxid+(m+1)*100):
         url= 'http://space.bilibili.com/ajax/member/GetInfo?mid=' + str(i)
@@ -272,3 +282,5 @@ for m in range(0,999):
 
     pool.close()
     pool.join()
+
+#再次获取403数据
