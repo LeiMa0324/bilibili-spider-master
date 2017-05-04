@@ -225,15 +225,6 @@ def user2file(userid):
 
 time1 = time.time()
 
-#原for循环
-# for m in range(1691,2000): #26 ,1000
-#     urls = []
-#     for i in range(m*100, (m+1)*100):
-#         url = 'http://space.bilibili.com/ajax/member/GetInfo?mid=' + str(i)
-#         urls.append(url)
-
-#程序开始，输入ip最后一位，链接数据库
-
 dbconfig={}
 
 with open("dbconfig.txt","rb") as config:
