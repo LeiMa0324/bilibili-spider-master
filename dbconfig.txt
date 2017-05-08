@@ -1,5 +1,5 @@
-ip=10.128.201.70
+ip=localhost
 user=root
-passwd=hadoopmysql
-db=bilibili469
-maxid=1769001
+passwd=root
+db=bilibili
+maxid=769000

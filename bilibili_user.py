@@ -46,14 +46,34 @@ head = {
     'AlexaToolbar-ALX_NS_PH': 'AlexaToolbar/alx-4.0',
     'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6,ja;q=0.4',
     'Accept': 'application/json, text/javascript, */*; q=0.01',
+
 }
 
+# 代理服务器
+proxyHost = "proxy.abuyun.com"
+proxyPort = "9020"
+
+# 代理隧道验证信息
+proxyUser = "HHV0AG22S43L45FD"
+proxyPass = "AF85C01E36506837"
+
+proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
+    "host": proxyHost,
+    "port": proxyPort,
+    "user": proxyUser,
+    "pass": proxyPass,
+}
+
+proxies = {
+    "http": proxyMeta,
+    "https": proxyMeta,
+}
 
 
 #获取数据函数
 def getsource(url):
-    #线程睡眠(30-60)的随机秒数
-    time.sleep(random.choice(range(1,5)))
+    # #线程睡眠(30-60)的随机秒数
+    # time.sleep(random.choice(range(1,5)))
     try:
         payload = {
             '_': datetime_to_timestamp_in_milliseconds(datetime.datetime.now()),
@@ -77,7 +97,7 @@ def getsource(url):
         s=requests.session()
         s.keep_alive = False
         response= s.post('http://space.bilibili.com/ajax/member/GetInfo', headers=head,  data=payload,
-                         # proxies = tempproxy
+                         proxies = proxies
                          )
         jscontent =response.text
 

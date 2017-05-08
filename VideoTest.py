@@ -14,6 +14,28 @@ from requests.exceptions import ProxyError
 import urllib
 import math
 
+
+# 代理服务器
+proxyHost = "proxy.abuyun.com"
+proxyPort = "9020"
+
+# 代理隧道验证信息
+proxyUser = "HHV0AG22S43L45FD"
+proxyPass = "AF85C01E36506837"
+
+proxyMeta = "http://%(user)s:%(pass)s@%(host)s:%(port)s" % {
+    "host": proxyHost,
+    "port": proxyPort,
+    "user": proxyUser,
+    "pass": proxyPass,
+}
+
+proxies = {
+    "http": proxyMeta,
+    "https": proxyMeta,
+}
+
+
 def datetime_to_timestamp_in_milliseconds(d):
     current_milli_time = lambda: int(round(time.time() * 1000))
     return current_milli_time()
@@ -45,7 +67,9 @@ def VideoRequest(mid,pagenum):
 
     VideoRequestList=[]
     #发送请求
-    videocJson = requests.get(url,params=payload, headers=head).content
+    videocJson = requests.get(url,params=payload, headers=head,proxies = proxies).content
+    print videocJson
+
     avDict = json.loads(videocJson)
     #校验Json数据
     statusJson = avDict['status'] if 'status' in avDict.keys() else False
@@ -105,7 +129,7 @@ def getTags(VideoList):
     #对每一个视频处理
     for i in range(0,len(VideoListlocal)):
         payload['aid']=VideoListlocal[i]['aid']
-        tagJson = requests.get(url,params=payload,headers=head).content
+        tagJson = requests.get(url,params=payload,headers=head,proxies = proxies).content
         tgDict = json.loads(tagJson)
         #删除不需要的键值
         del VideoListlocal[i]['author']
