@@ -210,7 +210,11 @@
       <Position>2</Position>
       <DataType>int(11)|0</DataType>
     </column>
-    <key id="58" parent="10" name="PRIMARY">
+    <column id="58" parent="10" name="response_code">
+      <Position>3</Position>
+      <DataType>int(5)|0</DataType>
+    </column>
+    <key id="59" parent="10" name="PRIMARY">
       <ColNames>id</ColNames>
       <Primary>1</Primary>
     </key>
