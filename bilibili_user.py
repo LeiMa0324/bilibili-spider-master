@@ -105,10 +105,7 @@ def getsource(url):
         # print responseCode
         if response.status_code ==200:
             print "请求成功，获取用户信息...mid:%s "%(payload["mid"])
-            # print ("request success,getting user mid:"+payload["mid"]+"\n"+ jscontent)
-            '''
-            检查403表中是否已有该数据，如果有，则删除
-            '''
+
             #处理json数据
             processjson(jscontent)
             #获取视频与tag列表
@@ -118,14 +115,10 @@ def getsource(url):
             print "请求失败，用户mid %s 错误码：%s "% (payload["mid"],response.status_code,
                                                    # tempproxy
                                                    )
-            '''
-            检查403表中是否有该数据，如果没有，则插入
-            '''
             #将错误id存入数据库
-            user2file(payload["mid"])
-            #如果被403则线程阻塞，随机睡眠（60-120s）
-
-            time.sleep(random.choice(range(30,120)))
+            user2file(payload["mid"],response.status_code)
+            if response.status_code==429:
+                time.sleep(100)
     except ProxyError:
         print "代理异常:"
         time.sleep(random.choice(range(60,100)))
@@ -177,7 +170,7 @@ def processjson(jscontent):
                 print('no data now')
 
         else:
-            print"该用户没有json数据 " , url
+            print"该用户没有json数据 "
     except ValueError:
         print('decoding json has failed')
         print(jscontent)
@@ -200,8 +193,8 @@ def insertuser(userlist):
             #计数
             count[0] +=1
             print "已存入%d个用户" % count[0]
-    except Exception:
-        print("Mysql Error")
+    except Exception,e:
+        print e
         #关闭数据库
     finally:
         conn.close()
@@ -231,12 +224,13 @@ def lastuserindb():
         return  lastuser[0]
 
 #存入错误用户id到数据库
-def user2file(userid):
+def user2file(userid,response_code):
       conn = pymysql.connect(host=dbconfig["ip"], user=dbconfig["user"], passwd=dbconfig["passwd"], charset='utf8')
       try:
           cur = conn.cursor()
           conn.select_db(dbconfig["db"])
-          cur.execute("insert into fail_users(mid) values (%s);",userid)
+          cur.execute("insert into fail_users(mid,response_code) values (%s,%s);",(userid,response_code))
+          conn.commit()
       except Exception:
         print "插入403用户失败"
       finally:
@@ -295,3 +289,4 @@ for m in range(0,9999):
     pool.join()
 
 #再次获取403数据
+
