@@ -236,6 +236,21 @@ def user2file(userid,response_code):
       finally:
         conn.close()
 
+def mul(urls):
+    # 开启4个线程
+    pool = ThreadPool(4)
+    try:
+        results = pool.map(getsource, urls)
+
+    except Exception, e:
+        # print 'ConnectionError'
+        print e
+        # 用map函数代替for循环，开启多线程运行函数
+        results = pool.map(getsource, urls)
+
+    pool.close()
+    pool.join()
+
 
 time1 = time.time()
 
@@ -249,7 +264,7 @@ with open("dbconfig.txt","rb") as config:
     dbconfig["passwd"]=con[2].replace("passwd=","").replace("\r\n","")
     dbconfig["db"]=con[3].replace("db=","").replace("\r\n","")
     dbconfig["maxid"]=con[4].replace("maxid=","").replace("\r\n","")
-
+    dbconfig["limitid"] = con[4].replace("limitid=", "").replace("\r\n", "").replace("\n", "")
 print(dbconfig)
 
 
@@ -270,23 +285,14 @@ print"当前数据库中最大用户为：", maxid
 #一次获取100w个用户
 for m in range(0,9999):
     urls = []
-    for i in range(maxid+m*100,maxid+(m+1)*100):
-        url= 'http://space.bilibili.com/ajax/member/GetInfo?mid=' + str(i)
-        urls.append(url)
-
-    #开启4个线程
-    pool = ThreadPool(4)
-    try:
-        results = pool.map(getsource, urls)
-
-    except Exception, e:
-        # print 'ConnectionError'
-        print e
-        #用map函数代替for循环，开启多线程运行函数
-        results = pool.map(getsource, urls)
-
-    pool.close()
-    pool.join()
-
-#再次获取403数据
-
+    if  dbconfig["limitid"]>maxid+(m+1)*100:
+        for i in range(maxid+m*100,maxid+(m+1)*100 ):
+            url= 'http://space.bilibili.com/ajax/member/GetInfo?mid=' + str(i)
+            urls.append(url)
+        mul(urls)
+    else:
+        for i in range(maxid+m*100,dbconfig["limitid"]+1 ):
+            url = 'http://space.bilibili.com/ajax/member/GetInfo?mid=' + str(i)
+            urls.append(url)
+        mul(urls)
+        break

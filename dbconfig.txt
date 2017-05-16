@@ -3,3 +3,4 @@ user=root
 passwd=root
 db=bilibili
 maxid=769000
+limitid=1769000
